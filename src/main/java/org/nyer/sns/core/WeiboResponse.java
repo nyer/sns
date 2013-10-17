@@ -1,11 +1,18 @@
 package org.nyer.sns.core;
 
+
 /**
  * 微博服务请求的响应
  * @author leiting
  *
  */
 public class WeiboResponse {
+	public static WeiboResponse NO_TOKEN_RESPONSE;
+	static {
+		NO_TOKEN_RESPONSE = new WeiboResponse();
+		NO_TOKEN_RESPONSE.setStatus(WeiboProtocal.AUTH_ERROR);
+	}
+	
 	private int status;
 	private boolean localError;
 	private Exception exp;

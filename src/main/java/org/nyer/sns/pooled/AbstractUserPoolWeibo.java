@@ -34,13 +34,13 @@ public abstract class AbstractUserPoolWeibo implements UserPoolWeibo  {
 				if (user != null) {
 					AbstractUserPoolWeibo.this.userPool.persistUser(uid, user);
 				} else {
-					log.error("error to get user, uid: " + uid + ", tokenPair: " + tokenPair);
+					log.error("error to get user, uid: " + uid + ", tokenPair: " + tokenPair + ", sns: " + AbstractUserPoolWeibo.this.weibo.getOAuthProvider());
 				}
 			}
 			
 			@Override
 			public void onAccessTokenFetchFailed(Serializable uid) {
-				log.error("error to fetch access token , uid: " + uid);
+				log.error("error to fetch access token , uid: " + uid + ", sns: " + AbstractUserPoolWeibo.this.weibo.getOAuthProvider());
 			}
 		});
 	}
@@ -49,6 +49,10 @@ public abstract class AbstractUserPoolWeibo implements UserPoolWeibo  {
 	public WeiboResponse publish(Serializable uid, String title,
 			String message, String url, String clientIP) {
 		OAuthTokenPair accessTokenPair = this.getAccessToken(uid);
+		if (accessTokenPair == null) {
+			log.error("publish failed, no access token was found, uid: " + uid + ", sns: " + weibo.getOAuthProvider());
+			return WeiboResponse.NO_TOKEN_RESPONSE;
+		}
 		
 		return this.weibo.publish(accessTokenPair, title, message, url, clientIP);
 	}
@@ -58,6 +62,10 @@ public abstract class AbstractUserPoolWeibo implements UserPoolWeibo  {
 			String message, byte[] imgBytes, String imgName, String url,
 			String clientIP) {
 		OAuthTokenPair accessTokenPair = this.getAccessToken(uid);
+		if (accessTokenPair == null) {
+			log.error("publish with img failed, no access token was found, uid: " + uid + ", sns: " + weibo.getOAuthProvider());
+			return WeiboResponse.NO_TOKEN_RESPONSE;
+		}
 		
 		return this.weibo.publishWithImage(accessTokenPair, title, message, imgBytes, imgName, url, clientIP);
 	}
@@ -84,13 +92,24 @@ public abstract class AbstractUserPoolWeibo implements UserPoolWeibo  {
 	
 	@Override
 	public OAuthTokenPair getAccessToken(Serializable uid) {
-		return getUser(uid).getTokenPair();
+		WeiboUser user = getUser(uid);
+		if (user == null) {
+			log.warn("no sns user was found, uid: " + uid + ", sns: " + weibo.getOAuthProvider());
+			return null;
+		}
+		return user.getTokenPair();
 	}
 
 	@Override
 	public Page<WeiboUser> getPageFollower(Serializable uid, int page,
 			int pageSize) {
 		OAuthTokenPair accessTokenPair = this.getAccessToken(uid);
+
+		if (accessTokenPair == null) {
+			log.error("get PageFollower failed, no access token was found, uid: " + uid + ", sns: " + weibo.getOAuthProvider());
+			return null;
+		}
+		
 		return this.weibo.getPageFollower(accessTokenPair, page, pageSize);
 	}
 
@@ -105,6 +124,11 @@ public abstract class AbstractUserPoolWeibo implements UserPoolWeibo  {
 	public Page<WeiboUser> getPageFriend(Serializable uid, int page,
 			int pageSize) {
 		OAuthTokenPair accessTokenPair = this.getAccessToken(uid);
+		if (accessTokenPair == null) {
+			log.error("get getPageFriend failed, no access token was found, uid: " + uid + ", sns: " + weibo.getOAuthProvider());
+			return null;
+		}
+		
 		return this.weibo.getPageFriend(accessTokenPair, page, pageSize);
 	}
 
